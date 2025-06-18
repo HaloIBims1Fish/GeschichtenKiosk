@@ -70,8 +70,19 @@ PDF_FILES = {
 }
 
 # --- PAYPAL ---
+from config import PAYPAL_CLIENT_ID, PAYPAL_SECRET
+import requests
+import logging
+
+logger = logging.getLogger(__name__)
+
 def get_access_token():
-    url = f"https://api-m.{PAYPAL_MODE}.paypal.com/v1/oauth2/token"
+    url = "https://api-m.paypal.com/v1/oauth2/token"
+
+    # Debug-Ausgabe, zeige nur die ersten Zeichen zur Sicherheit
+    print(f"[DEBUG] PAYPAL_CLIENT_ID: {PAYPAL_CLIENT_ID[:8]}...")
+    print(f"[DEBUG] PAYPAL_SECRET: {PAYPAL_SECRET[:8]}...")
+
     try:
         response = requests.post(
             url,
@@ -80,13 +91,16 @@ def get_access_token():
         )
         response.raise_for_status()
         return response.json()["access_token"]
-    except requests.RequestException:
+
+    except requests.RequestException as e:
         logger.exception("Access Token Fehler.")
+        print(f"[ERROR] Zugriffstoken konnte nicht geholt werden: {e}")
+        print(f"[RESPONSE] Inhalt: {getattr(e.response, 'text', 'Kein Inhalt')}")
         raise
 
 def create_payment(title, user_id):
     access_token = get_access_token()
-    url = f"https://api-m.{PAYPAL_MODE}.paypal.com/v2/checkout/orders"
+    url = f"https://api-m.paypal.com/v2/checkout/orders"
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {access_token}"
@@ -95,7 +109,7 @@ def create_payment(title, user_id):
         "intent": "CAPTURE",
         "purchase_units": [{
             "reference_id": f"{user_id}-{title}",
-            "amount": {"currency_code": "EUR", "value": "0.99"},
+            "amount": {"currency_code": "EUR", "value": "1.19"},
             "description": title
         }],
         "application_context": {
@@ -110,7 +124,7 @@ def create_payment(title, user_id):
 
 def check_payment(order_id):
     access_token = get_access_token()
-    url = f"https://api-m.{PAYPAL_MODE}.paypal.com/v2/checkout/orders/{order_id}"
+    url = f"https://api-m.paypal.com/v2/checkout/orders/{order_id}"
     headers = {"Authorization": f"Bearer {access_token}"}
     try:
         response = requests.get(url, headers=headers)
@@ -142,7 +156,7 @@ def send_welcome(message):
     for title in PDF_FILES:
         markup.add(InlineKeyboardButton(text=title, callback_data=f"buy_{title}"))
     bot.send_message(message.chat.id,
-                     "📚 Willkommen im Geschichtenkiosk! Wähle eine Geschichte (0,99€):",
+                     "📚 Willkommen im Geschichtenkiosk! Wähle eine Geschichte (1,19):",
                      reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("buy_"))
