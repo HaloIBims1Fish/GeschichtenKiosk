@@ -1,0 +1,39 @@
+# Bytecode-Dateien
+__pycache__/
+*.py[cod]
+
+# Virtuelle Umgebungen
+venv/
+env/
+.venv/
+.env/
+
+# VSCode / IDE-Dateien
+.vscode/
+.idea/
+
+# Systemdateien
+.DS_Store
+Thumbs.db
+
+# Logdateien
+*.log
+
+# Python-Umgebungsdateien
+*.egg-info/
+dist/
+build/
+
+# Sensible Konfigurationsdateien
+config.py
+credentials.json
+token.json
+
+# Output-Dateien
+*.pdf
+
+# Render-/Deployment
+*.sqlite3
+node_modules/
+.cache/
+render.yaml
