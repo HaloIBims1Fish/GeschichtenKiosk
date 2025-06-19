@@ -238,19 +238,6 @@ def handle_purchase(call):
     except Exception:
         bot.send_message(chat_id, "❌ Fehler beim Erstellen der Zahlung.")
 
-# Entferne komplett den alten Order-ID Text Handler
-# @bot.message_handler(func=lambda m: m.text and m.text.startswith("ORDER-"))
-# def handle_order_id(message):
-#     ...
-
-# --- Bot starten ---
-from flask import Flask, request, jsonify
-from telebot import TeleBot, types
-from config import BOT_TOKEN, WEBHOOK_URL
-
-bot = TeleBot(BOT_TOKEN)
-app = Flask(__name__)
-
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def telegram_webhook():
     print("✅ Telegram-Update empfangen!")  # <-- Log-Zeile hinzufügen
