@@ -258,14 +258,6 @@ def telegram_webhook():
     update = types.Update.de_json(json_string)
     bot.process_new_updates([update])
     return jsonify({"status": "ok"})
-    
-
-@app.route(f"/{BOT_TOKEN}", methods=["POST"])
-def telegram_webhook():
-    json_string = request.get_data().decode("utf-8")
-    update = types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return jsonify({"status": "ok"}), 200
 
 @app.route("/", methods=["GET"])
 def home():
