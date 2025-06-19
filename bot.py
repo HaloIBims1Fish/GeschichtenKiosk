@@ -200,6 +200,8 @@ def home():
 
 # --- Start Server ---
 if __name__ == "__main__":
+    logger.info("🚀 Starte Bot...")
     bot.remove_webhook()
-    bot.set_webhook(url=f"{WEBHOOK_URL}/{BOT_TOKEN}")
+    success = bot.set_webhook(url=f"{WEBHOOK_URL}/{BOT_TOKEN}")
+    logger.info(f"🌐 Webhook gesetzt: {success}")
     app.run(host="0.0.0.0", port=5000)
