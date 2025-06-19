@@ -6,18 +6,9 @@ bot.py – Telegram-Geschichtenkiosk mit PayPal-Integration und Google Drive PDF
 Autor: Fischi (2025)
 Lizenz: MIT
 Beschreibung:
-Ein Telegram-Bot, der es Benutzern ermöglicht, Kinderbücher für 0,99€ zu kaufen.
+Ein Telegram-Bot, der es Benutzern ermöglicht, Kinderbücher für 1,19€ zu kaufen.
 Die Bezahlung erfolgt via PayPal. Nach erfolgreicher Zahlung wird das entsprechende PDF
 aus Google Drive geladen und dem Benutzer gesendet.
-
-Abhängigkeiten:
-- pyTelegramBotAPI (telebot)
-- google-api-python-client
-- google-auth
-- requests
-
-Start:
-python3 bot.py
 """
 
 import io
@@ -30,22 +21,18 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from config import BOT_TOKEN, PAYPAL_CLIENT_ID, PAYPAL_SECRET, PAYPAL_MODE
 
-# --- Logging ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Bot Setup ---
 bot = TeleBot(BOT_TOKEN)
 bot.remove_webhook()
 user_state = {}
 
-# --- Google Drive Setup ---
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 SERVICE_ACCOUNT_FILE = 'credentials.json'
 credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=credentials)
 
-# --- PDF Mapping (gekürzt) ---
 PDF_FILES = {
     "Lilly und der Regenbogenschirm": "112CF9AOH8MbOZyZkgVN4UdlvZrjQdDhq",
     "Finns Flaschenpost aus dem Meer": "1nZH5ncjgEP6klYbhAJcGEiU5vH-ISD_U",
@@ -69,20 +56,9 @@ PDF_FILES = {
     "Hannah und der singende Stein": "1AYq3gAhdTL9Ep4nHjo2U2gBeoYB9F8Lr"
 }
 
-# --- PAYPAL ---
-from config import PAYPAL_CLIENT_ID, PAYPAL_SECRET
-import requests
-import logging
-
-logger = logging.getLogger(__name__)
-
 def get_access_token():
-    url = "https://api-m.paypal.com/v1/oauth2/token"
-
-    # Debug-Ausgabe, zeige nur die ersten Zeichen zur Sicherheit
-    print(f"[DEBUG] PAYPAL_CLIENT_ID: {PAYPAL_CLIENT_ID[:8]}...")
-    print(f"[DEBUG] PAYPAL_SECRET: {PAYPAL_SECRET[:8]}...")
-
+    base_url = "api-m.paypal.com" if PAYPAL_MODE == "live" else "api-m.sandbox.paypal.com"
+    url = f"https://{base_url}/v1/oauth2/token"
     try:
         response = requests.post(
             url,
@@ -90,17 +66,17 @@ def get_access_token():
             data={"grant_type": "client_credentials"}
         )
         response.raise_for_status()
-        return response.json()["access_token"]
-
-    except requests.RequestException as e:
-        logger.exception("Access Token Fehler.")
-        print(f"[ERROR] Zugriffstoken konnte nicht geholt werden: {e}")
-        print(f"[RESPONSE] Inhalt: {getattr(e.response, 'text', 'Kein Inhalt')}")
+        token = response.json()["access_token"]
+        logger.info("Access Token erfolgreich abgerufen.")
+        return token
+    except requests.RequestException:
+        logger.exception("Fehler beim Abrufen des Access Tokens.")
         raise
 
-def create_payment(title, user_id):
+def create_payment(title: str, user_id: int) -> tuple[str, str]:
     access_token = get_access_token()
-    url = f"https://api-m.paypal.com/v2/checkout/orders"
+    base_url = "api-m.paypal.com" if PAYPAL_MODE == "live" else "api-m.sandbox.paypal.com"
+    url = f"https://{base_url}/v2/checkout/orders"
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {access_token}"
@@ -117,24 +93,51 @@ def create_payment(title, user_id):
             "user_action": "PAY_NOW"
         }
     }
-    response = requests.post(url, json=body, headers=headers)
-    response.raise_for_status()
-    data = response.json()
-    return data["id"], next(link["href"] for link in data["links"] if link["rel"] == "approve")
+    try:
+        response = requests.post(url, json=body, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        payment_id = data["id"]
+        approval_url = next(link["href"] for link in data["links"] if link["rel"] == "approve")
+        logger.info(f"Zahlung erstellt: {payment_id}")
+        return payment_id, approval_url
+    except requests.RequestException:
+        logger.exception("Fehler beim Erstellen der Zahlung.")
+        raise
 
-def check_payment(order_id):
+def capture_payment(order_id: str) -> bool:
     access_token = get_access_token()
-    url = f"https://api-m.paypal.com/v2/checkout/orders/{order_id}"
-    headers = {"Authorization": f"Bearer {access_token}"}
+    base_url = "api-m.paypal.com" if PAYPAL_MODE == "live" else "api-m.sandbox.paypal.com"
+    url = f"https://{base_url}/v2/checkout/orders/{order_id}/capture"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}"
+    }
+    try:
+        response = requests.post(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("status") == "COMPLETED"
+    except requests.RequestException:
+        logger.exception("Fehler beim Capturen der Zahlung.")
+        return False
+
+def check_payment(order_id: str) -> bool:
+    access_token = get_access_token()
+    base_url = "api-m.paypal.com" if PAYPAL_MODE == "live" else "api-m.sandbox.paypal.com"
+    url = f"https://{base_url}/v2/checkout/orders/{order_id}"
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
-        return response.json().get("status") in ["COMPLETED", "APPROVED"]
+        status = response.json().get("status")
+        return status in ["COMPLETED", "APPROVED"]
     except requests.RequestException:
-        logger.exception("Zahlungsprüfung fehlgeschlagen.")
+        logger.exception("Fehler beim Überprüfen der Bestellung.")
         return False
 
-# --- Drive PDF Download ---
 def download_pdf(file_id):
     try:
         request = drive_service.files().get_media(fileId=file_id)
@@ -149,15 +152,25 @@ def download_pdf(file_id):
         logger.exception("Download-Fehler.")
         return None
 
-# --- Telegram Bot Handlers ---
+# --- NEU: Begrüßung beim Betreten ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
+    chat_id = message.chat.id
+    welcome_text = (
+        "👋 Hallo und herzlich willkommen im Geschichtenkiosk!\n\n"
+        "Wir sind eine Familie mit zwei Kindern und hatten die Idee, "
+        "ihren Wunsch nach Urlaub zu erfüllen. Dafür legen wir ein Sparkonto an.\n\n"
+        "Hier kannst du spannende Kinderbücher für je 1,19€ kaufen.\n\n"
+        "So funktioniert's:\n"
+        "1. Wähle unten eine Geschichte per Button aus.\n"
+        "2. Bezahle sicher via PayPal.\n"
+        "3. Nach erfolgreicher Zahlung erhältst du die PDF direkt hier im Chat.\n\n"
+        "Viel Spaß beim Stöbern und Lesen! 📚"
+    )
     markup = InlineKeyboardMarkup()
     for title in PDF_FILES:
         markup.add(InlineKeyboardButton(text=title, callback_data=f"buy_{title}"))
-    bot.send_message(message.chat.id,
-                     "📚 Willkommen im Geschichtenkiosk! Wähle eine Geschichte (1,19):",
-                     reply_markup=markup)
+    bot.send_message(chat_id, welcome_text, reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("buy_"))
 def handle_purchase(call):
@@ -167,8 +180,11 @@ def handle_purchase(call):
         order_id, approval_url = create_payment(title, chat_id)
         user_state[chat_id] = {"title": title, "order_id": order_id}
         bot.send_message(chat_id,
-                         f"✅ *{title}* ausgewählt.\nBezahl hier: {approval_url}\n\nSende danach deine *Order-ID*, um die Geschichte zu erhalten.",
-                         parse_mode="Markdown")
+                         f"✅ *{title}* ausgewählt.\n\n"
+                         f"Bitte bezahle hier: {approval_url}\n\n"
+                         "Nach abgeschlossener Zahlung bekommst du die Geschichte direkt hier im Chat.",
+                         parse_mode="Markdown",
+                         disable_web_page_preview=True)
     except Exception:
         bot.send_message(chat_id, "❌ Fehler beim Erstellen der Zahlung.")
 
@@ -178,24 +194,27 @@ def handle_order_id(message):
     order_id = message.text.strip()
 
     if chat_id not in user_state or user_state[chat_id].get("order_id") != order_id:
-        return bot.send_message(chat_id, "⚠️ Bitte zuerst eine Geschichte auswählen oder gültige Order-ID angeben.")
+        bot.send_message(chat_id, "⚠️ Bitte zuerst eine Geschichte auswählen oder gültige Order-ID angeben.")
+        return
 
-    if check_payment(order_id):
+    # Zahlung capture
+    if capture_payment(order_id):
         file_id = PDF_FILES.get(user_state[chat_id]["title"])
         pdf = download_pdf(file_id)
         if pdf:
             bot.send_document(chat_id, pdf, visible_file_name=f"{user_state[chat_id]['title']}.pdf")
-            bot.send_message(chat_id, "🎉 Danke für deinen Kauf! "
-                                      "Mit deiner Unterstützung hilfst du unseren kleinen Geschichtenzauberern, "
-                                      "ihre Träume zu leben und unsere Familie auf kleine Abenteuer zu schicken. "
-                                      "Wir freuen uns riesig, dich bald mit neuen spannenden Geschichten überraschen zu dürfen! 📚✨\n"
-                                      "Viel Spaß beim Lesen! 🎉")
+            bot.send_message(chat_id,
+                             "🎉 Danke für deinen Kauf! "
+                             "Mit deiner Unterstützung hilfst du unseren kleinen Geschichtenzauberern, "
+                             "ihre Träume zu leben und unsere Familie auf kleine Abenteuer zu schicken. "
+                             "Wir freuen uns riesig, dich bald mit neuen spannenden Geschichten überraschen zu dürfen! 📚✨\n"
+                             "Viel Spaß beim Lesen! 🎉")
+            user_state.pop(chat_id, None)
         else:
             bot.send_message(chat_id, "❌ Fehler beim Herunterladen des PDFs.")
     else:
         bot.send_message(chat_id, "❌ Zahlung noch nicht abgeschlossen oder ungültig.")
 
-# --- Bot starten ---
 if __name__ == "__main__":
     logger.info("Bot wird gestartet (infinity_polling)...")
     bot.infinity_polling()
