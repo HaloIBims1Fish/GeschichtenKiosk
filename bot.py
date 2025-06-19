@@ -6,7 +6,7 @@ bot.py – Telegram-Geschichtenkiosk mit PayPal-Integration und Google Drive PDF
 Autor: Fischi (2025)
 Lizenz: MIT
 Beschreibung:
-Ein Telegram-Bot, der es Benutzern ermöglicht, Kinderbücher für 0,99€ zu kaufen.
+Ein Telegram-Bot, der es Benutzern ermöglicht, Kinderbücher für 1,19€ zu kaufen.
 Die Bezahlung erfolgt via PayPal. Nach erfolgreicher Zahlung wird das entsprechende PDF
 aus Google Drive geladen und dem Benutzer gesendet.
 
@@ -244,12 +244,25 @@ def handle_purchase(call):
 #     ...
 
 # --- Bot starten ---
+from flask import Flask, request, jsonify
+from telebot import TeleBot, types
+from config import BOT_TOKEN, WEBHOOK_URL
+
+bot = TeleBot(BOT_TOKEN)
+app = Flask(__name__)
+
+@app.route(f"/{BOT_TOKEN}", methods=["POST"])
+def telegram_webhook():
+    json_string = request.get_data().decode("utf-8")
+    update = types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return jsonify({"status": "ok"}), 200
+
+@app.route("/", methods=["GET"])
+def home():
+    return "Webhook läuft ✅", 200
+
 if __name__ == "__main__":
-    import threading
-
-    def run_flask():
-        app.run(host="0.0.0.0", port=5000)
-
-    threading.Thread(target=run_flask).start()
-    logger.info("Bot wird gestartet (infinity_polling)...")
-    bot.infinity_polling()
+    bot.remove_webhook()
+    bot.set_webhook(url=f"{WEBHOOK_URL}/{BOT_TOKEN}")
+    app.run(host="0.0.0.0", port=5000)
