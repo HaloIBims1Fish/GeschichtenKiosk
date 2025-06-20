@@ -140,8 +140,11 @@ def handle_purchase(call):
 
 @app.route("/", methods=["POST"])
 def telegram_webhook():
-    update = types.Update.de_json(request.get_data().decode("utf-8"))
-    bot.process_new_updates([update])
+    try:
+        update = types.Update.de_json(request.get_data().decode("utf-8"))
+        bot.process_new_updates([update])
+    except Exception as e:
+        print(f"❌ Webhook-Fehler: {e}")
     return jsonify({"status": "ok"})
 
 # --- PayPal Rückkehr ---
