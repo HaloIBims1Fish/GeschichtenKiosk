@@ -194,8 +194,9 @@ def paypal_return():
 def paypal_cancel():
     return "Zahlung abgebrochen. Du kannst jederzeit neu starten."
 
-@app.route("/", methods=["GET"])
+@app.route("/", methods=["GET", "POST"])
 def home():
+    logger.info(f"Zugriff auf / mit Methode: {request.method}")
     return "📡 Webhook läuft!", 200
 
 # --- Start Server ---
