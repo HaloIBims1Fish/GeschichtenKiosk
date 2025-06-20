@@ -138,7 +138,7 @@ def handle_purchase(call):
     except Exception:
         bot.send_message(chat_id, "❌ Fehler beim Erstellen der Zahlung. Bitte später erneut versuchen.")
 
-@app.route("/", methods=["POST"])
+@app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def telegram_webhook():
     try:
         update = types.Update.de_json(request.get_data().decode("utf-8"))
