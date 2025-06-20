@@ -24,21 +24,20 @@ user_state = {}
 
 # --- PDF-Dateien per Direktlink ---
 PDF_FILES = {
-    "Lilly und der Regenbogenschirm": "https://drive.google.com/file/d/112CF9AOH8MbOZyZkgVN4UdlvZrjQdDhq/view?usp=drive_link",
-    "Finns Flaschenpost aus dem Meer": "https://drive.google.com/file/d/1nZH5ncjgEP6klYbhAJcGEiU5vH-ISD_U/view?usp=drive_link",
-    "Die Abenteuer von Kalle, dem Keksdieb": "https://drive.google.com/file/d/1MYIARCf0DFs0Gq1wdn-8fBMDYmSYYFxe/view?usp=drive_link",
-    "Mira und die flüsternden Bücher": "https://drive.google.com/file/d/1AF_vdS_m3YCaDmF1VO9HqUKsSgn75hOi/view?usp=drive_link",
-    "Emil im Land der verlorenen Sachen": "https://drive.google.com/file/d/1sVpY0FoHAcAOTbGnTeqx3birFrNTkrSW/view?usp=drive_link",
-    "Der Zauberzoo hinter dem Schrank": "https://drive.google.com/file/d/19COgUGIn4rUwX2yQfYi9FPBUEuoJE47w/view?usp=drive_link",
-    "Nino und das Geheimnis der Sternenfreunde": "https://drive.google.com/file/d/1E4OwMSoZRz4pBHwcU01YsOb6wxB5-zZN/view?usp=drive_link",
-    "Die Wolkenfee und das Donnerwetter": "https://drive.google.com/file/d/1Tv7IR0Q14jLhliHgP-VV91XJMv6T6l8X/view?usp=drive_link",
-    "Tom und das fliegende Frühstücksei": "https://drive.google.com/file/d/1Kmio4YjXdBPfkUPVtue3Ty9U11GyfTlP/view?usp=drive_link",
-    "Die Uhr, die rückwärts lief": "https://drive.google.com/file/d/1YADu1ttscox2yG67frZDD03ZeGB-VM5N/view?usp=drive_link",
-    "Lotte und der Wunschstein": "https://drive.google.com/file/d/1wV4JFepP5Mlk0NmIU9xPJDCOZKRd2h35/view?usp=drive_link",
-    "Benni baut sich eine Rakete": "https://drive.google.com/file/d/1tjbqnG2-H-xW0Ffj8lOmbcBckwfdHbb8/view?usp=drive_link",
-    "Die Piratin mit der Zahnlücke": "https://drive.google.com/file/d/16jkLPOIfUnEwMnKPRLiWJ0BzjFQwA0tO/view?usp=drive_link",
-    "Paul und das Haustier aus dem All": "https://drive.google.com/file/d/1KpEIh0d5raLLANJly_2fp8-1l67W37ot/view?usp=drive_link"
-
+    "Lilly und der Regenbogenschirm": "https://drive.google.com/uc?export=download&id=112CF9AOH8MbOZyZkgVN4UdlvZrjQdDhq",
+    "Finns Flaschenpost aus dem Meer": "https://drive.google.com/uc?export=download&id=1nZH5ncjgEP6klYbhAJcGEiU5vH-ISD_U",
+    "Die Abenteuer von Kalle, dem Keksdieb": "https://drive.google.com/uc?export=download&id=1MYIARCf0DFs0Gq1wdn-8fBMDYmSYYFxe",
+    "Mira und die flüsternden Bücher": "https://drive.google.com/uc?export=download&id=1AF_vdS_m3YCaDmF1VO9HqUKsSgn75hOi",
+    "Emil im Land der verlorenen Sachen": "https://drive.google.com/uc?export=download&id=1sVpY0FoHAcAOTbGnTeqx3birFrNTkrSW",
+    "Der Zauberzoo hinter dem Schrank": "https://drive.google.com/uc?export=download&id=19COgUGIn4rUwX2yQfYi9FPBUEuoJE47w",
+    "Nino und das Geheimnis der Sternenfreunde": "https://drive.google.com/uc?export=download&id=1E4OwMSoZRz4pBHwcU01YsOb6wxB5-zZN",
+    "Die Wolkenfee und das Donnerwetter": "https://drive.google.com/uc?export=download&id=1Tv7IR0Q14jLhliHgP-VV91XJMv6T6l8X",
+    "Tom und das fliegende Frühstücksei": "https://drive.google.com/uc?export=download&id=1Kmio4YjXdBPfkUPVtue3Ty9U11GyfTlP",
+    "Die Uhr, die rückwärts lief": "https://drive.google.com/uc?export=download&id=1YADu1ttscox2yG67frZDD03ZeGB-VM5N",
+    "Lotte und der Wunschstein": "https://drive.google.com/uc?export=download&id=1wV4JFepP5Mlk0NmIU9xPJDCOZKRd2h35",
+    "Benni baut sich eine Rakete": "https://drive.google.com/uc?export=download&id=1tjbqnG2-H-xW0Ffj8lOmbcBckwfdHbb8",
+    "Die Piratin mit der Zahnlücke": "https://drive.google.com/uc?export=download&id=16jkLPOIfUnEwMnKPRLiWJ0BzjFQwA0tO",
+    "Paul und das Haustier aus dem All": "https://drive.google.com/uc?export=download&id=1KpEIh0d5raLLANJly_2fp8-1l67W37ot"
 }
 
 # --- PDF-Download über Direktlink ---
