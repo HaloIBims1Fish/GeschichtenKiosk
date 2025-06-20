@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-bot.py – Telegram-Geschichtenkiosk mit PayPal-Integration und Google Drive PDF-Download
+Telegram Geschichtenkiosk – Zahlung via PayPal & PDF-Download per Direktlink
 Autor: Fischi (2025)
 """
 
@@ -11,50 +11,45 @@ import requests
 from flask import Flask, request, jsonify
 from telebot import TeleBot, types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
 from config import BOT_TOKEN, PAYPAL_CLIENT_ID, PAYPAL_SECRET, PAYPAL_MODE, WEBHOOK_URL
 
 # --- Logging ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Bot & Flask Setup ---
 bot = TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 bot.remove_webhook()
 user_state = {}
 
-# --- Google Drive ---
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-SERVICE_ACCOUNT_FILE = 'credentials.json'
-credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-drive_service = build('drive', 'v3', credentials=credentials)
-
-# --- PDF FILES (komplett) ---
+# --- PDF-Dateien per Direktlink ---
 PDF_FILES = {
-    "Lilly und der Regenbogenschirm": "112CF9AOH8MbOZyZkgVN4UdlvZrjQdDhq",
-    "Finns Flaschenpost aus dem Meer": "1nZH5ncjgEP6klYbhAJcGEiU5vH-ISD_U",
-    "Mila und der sprechende Mond": "1yLGuI-L9P4xJ7n6c41hn5WRXTeiFg_8X",
-    "Oskar und die verlorene Zeit": "1xaM9LvUXF5Zw4AvF9RS1PNuWp1UJOm9O",
-    "Niko und der Wunschbaum": "1RlNlM1Szf8yZ8J96zQTvMWbdpyxGqL2g",
-    "Sophie und der Kater aus der Zukunft": "1Sw4rO_yRTJtxZ-RIfUTKCTaNZ_Mz0dLr",
-    "Emil und der Wolkenträumer": "1ImCeBJvI50oUO2TcQqI4XIkHbAq-yoRj",
-    "Tom und das verschwundene Geräusch": "1onKW5TSvF9iwB_p3YX_cnuZbiFCM7fKb",
-    "Lena und die fliegende Bibliothek": "1yOg_WwqN6qG4PBnZo9MiNF9rg10yI1DL",
-    "Paul und das Lächeln der Sterne": "1B-XRC_b0lWBVLlHPI89Ro7WEdXPRvEIf",
-    "Clara und die Glühwürmchenmelodie": "1GKnE0wEKIrfOhhUtRzxZAxpdcTv3kRQZ",
-    "Jonas und das Geheimnis im Spiegel": "1zhGrxBaMkSwzPUJNSGp_C3S1OGrAfe6Y",
-    "Ella und der Traumfänger": "1U9HgETk3kVxohQ6Fq82L5WlGfWwXodYX",
-    "Ben und die Farben der Stille": "1VOtxCZ7-rl1gHdTCUmI5jVDtMsoch2Tf",
-    "Greta und die Reise in die Schneeflocke": "1rMxyrrbd9B2VYd3TqlBICmqtHgDcojXN",
-    "Lea und der Garten der Gedanken": "1xYkoFbeuW5PMxJZtE5sGmGuFJsmhKMiI",
-    "Max und der flüsternde Wald": "1GHXnZ9TTnmXYeJvPKcAZuNedpxcWlko1",
-    "Tilda und das Licht unter dem Bett": "1etoh5JNY4ITyNH0zldqt8lmYr_3w_Q3f",
-    "Noah und die Zeitreisenuhr": "1kCt8bbllrzCm_JNHRWuHdZ3oNiW_mXeP",
-    "Hannah und der singende Stein": "1AYq3gAhdTL9Ep4nHjo2U2gBeoYB9F8Lr"
+    "Lilly und der Regenbogenschirm": "https://drive.google.com/file/d/112CF9AOH8MbOZyZkgVN4UdlvZrjQdDhq/view?usp=drive_link",
+    "Finns Flaschenpost aus dem Meer": "https://drive.google.com/file/d/1nZH5ncjgEP6klYbhAJcGEiU5vH-ISD_U/view?usp=drive_link",
+    "Die Abenteuer von Kalle, dem Keksdieb": "https://drive.google.com/file/d/1MYIARCf0DFs0Gq1wdn-8fBMDYmSYYFxe/view?usp=drive_link",
+    "Mira und die flüsternden Bücher": "https://drive.google.com/file/d/1AF_vdS_m3YCaDmF1VO9HqUKsSgn75hOi/view?usp=drive_link",
+    "Emil im Land der verlorenen Sachen": "https://drive.google.com/file/d/1sVpY0FoHAcAOTbGnTeqx3birFrNTkrSW/view?usp=drive_link",
+    "Der Zauberzoo hinter dem Schrank": "https://drive.google.com/file/d/19COgUGIn4rUwX2yQfYi9FPBUEuoJE47w/view?usp=drive_link",
+    "Nino und das Geheimnis der Sternenfreunde": "https://drive.google.com/file/d/1E4OwMSoZRz4pBHwcU01YsOb6wxB5-zZN/view?usp=drive_link",
+    "Die Wolkenfee und das Donnerwetter": "https://drive.google.com/file/d/1Tv7IR0Q14jLhliHgP-VV91XJMv6T6l8X/view?usp=drive_link",
+    "Tom und das fliegende Frühstücksei": "https://drive.google.com/file/d/1Kmio4YjXdBPfkUPVtue3Ty9U11GyfTlP/view?usp=drive_link",
+    "Die Uhr, die rückwärts lief": "https://drive.google.com/file/d/1YADu1ttscox2yG67frZDD03ZeGB-VM5N/view?usp=drive_link",
+    "Lotte und der Wunschstein": "https://drive.google.com/file/d/1wV4JFepP5Mlk0NmIU9xPJDCOZKRd2h35/view?usp=drive_link",
+    "Benni baut sich eine Rakete": "https://drive.google.com/file/d/1tjbqnG2-H-xW0Ffj8lOmbcBckwfdHbb8/view?usp=drive_link",
+    "Die Piratin mit der Zahnlücke": "https://drive.google.com/file/d/16jkLPOIfUnEwMnKPRLiWJ0BzjFQwA0tO/view?usp=drive_link",
+    "Paul und das Haustier aus dem All": "https://drive.google.com/file/d/1KpEIh0d5raLLANJly_2fp8-1l67W37ot/view?usp=drive_link"
+
 }
+
+# --- PDF-Download über Direktlink ---
+def download_pdf_from_link(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return io.BytesIO(response.content)
+    except Exception:
+        logger.exception("Download fehlgeschlagen.")
+        return None
 
 # --- PayPal ---
 def get_access_token():
@@ -64,10 +59,10 @@ def get_access_token():
         response.raise_for_status()
         return response.json()["access_token"]
     except requests.RequestException:
-        logger.exception("Fehler beim Abrufen des Access Tokens.")
+        logger.exception("Fehler beim Abrufen des PayPal Tokens.")
         raise
 
-def create_payment(title: str, user_id: int) -> tuple[str, str]:
+def create_payment(title, user_id):
     access_token = get_access_token()
     base_url = "paypal.com" if PAYPAL_MODE == "live" else "sandbox.paypal.com"
     url = f"https://api-m.{base_url}/v2/checkout/orders"
@@ -97,7 +92,7 @@ def create_payment(title: str, user_id: int) -> tuple[str, str]:
     user_state[order_id] = {"chat_id": user_id, "title": title}
     return order_id, approval_url
 
-def capture_payment(order_id: str) -> bool:
+def capture_payment(order_id):
     access_token = get_access_token()
     base_url = "paypal.com" if PAYPAL_MODE == "live" else "sandbox.paypal.com"
     url = f"https://api-m.{base_url}/v2/checkout/orders/{order_id}/capture"
@@ -113,33 +108,18 @@ def capture_payment(order_id: str) -> bool:
         logger.exception("Fehler beim Capturen der Zahlung.")
         return False
 
-# --- PDF Download ---
-def download_pdf(file_id):
-    try:
-        request = drive_service.files().get_media(fileId=file_id)
-        fh = io.BytesIO()
-        downloader = MediaIoBaseDownload(fh, request)
-        done = False
-        while not done:
-            _, done = downloader.next_chunk()
-        fh.seek(0)
-        return fh
-    except Exception:
-        logger.exception("Download-Fehler.")
-        return None
-
-# --- Telegram Bot Handler ---
+# --- Telegram Handler ---
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
     bot.send_message(message.chat.id,
-        "👋 Hallo und herzlich willkommen im Geschichtenkiosk!\n\n"
-        "Unsere Kinder hatten die tolle Idee, ein Sparkonto für ihre Urlaubswünsche anzulegen. "
-        "Mit deinem Kauf hilfst du uns, ihnen diesen Wunsch zu erfüllen.\n\n"
-        "🔍 So funktioniert's:\n"
-        "1️⃣ Wähle eine Geschichte.\n"
-        "2️⃣ Bezahle sicher über PayPal (1,19€ pro Geschichte).\n"
-        "3️⃣ Erhalte deine Geschichte direkt hier im Chat als PDF.\n\n"
-        "💬 Viel Spaß beim Stöbern!")
+        "👋 Willkommen im *Geschichtenkiosk*!\n\n"
+        "Unsere Kinder hatten die Idee, ein Sparkonto für Urlaubswünsche anzulegen. "
+        "Mit deinem Kauf hilfst du dabei. 🙏\n\n"
+        "📚 So funktioniert's:\n"
+        "1️⃣ Geschichte auswählen\n"
+        "2️⃣ Per PayPal (1,19 €) zahlen\n"
+        "3️⃣ PDF wird direkt im Chat gesendet",
+        parse_mode="Markdown")
 
     markup = InlineKeyboardMarkup()
     for title in PDF_FILES:
@@ -153,20 +133,13 @@ def handle_purchase(call):
     try:
         order_id, approval_url = create_payment(title, chat_id)
         bot.send_message(chat_id,
-                         f"✅ *{title}* wurde ausgewählt.\n"
-                         f"Bitte bezahle sicher via PayPal:\n{approval_url}\n\n"
-                         f"Du wirst nach der Zahlung automatisch hierher zurückgeleitet.",
-                         parse_mode="Markdown")
+            f"✅ *{title}* wurde ausgewählt.\n"
+            f"Bitte bezahle sicher via PayPal:\n{approval_url}",
+            parse_mode="Markdown")
     except Exception:
-        bot.send_message(chat_id, "❌ Es gab ein Problem beim Erstellen der Zahlung. Bitte versuche es erneut.")
+        bot.send_message(chat_id, "❌ Fehler beim Erstellen der Zahlung. Bitte später erneut versuchen.")
 
-# --- Webhook Endpunkte ---
-@app.route(f"/{BOT_TOKEN}", methods=["POST"])
-def telegram_webhook():
-    update = types.Update.de_json(request.get_data().decode("utf-8"))
-    bot.process_new_updates([update])
-    return jsonify({"status": "ok"})
-
+# --- PayPal Rückkehr ---
 @app.route("/return")
 def paypal_return():
     order_id = request.args.get("token")
@@ -178,13 +151,11 @@ def paypal_return():
     user_state.pop(order_id)
 
     if capture_payment(order_id):
-        pdf = download_pdf(PDF_FILES[title])
+        pdf = download_pdf_from_link(PDF_FILES[title])
         if pdf:
             bot.send_document(chat_id, pdf, visible_file_name=f"{title}.pdf")
-            bot.send_message(chat_id, "🎉 Danke für deinen Kauf! "
-                                      "Mit deiner Unterstützung hilfst du unseren kleinen Geschichtenzauberern, "
-                                      "ihre Träume zu leben. Wir freuen uns riesig, dich bald mit neuen Geschichten zu überraschen! 📚✨")
-            return "✅ Zahlung abgeschlossen. PDF gesendet."
+            bot.send_message(chat_id, "🎉 Danke für deinen Kauf! Viel Spaß beim Lesen! 📖")
+            return "✅ PDF erfolgreich gesendet."
         else:
             return "⚠️ PDF-Download fehlgeschlagen.", 500
     else:
@@ -192,14 +163,13 @@ def paypal_return():
 
 @app.route("/cancel")
 def paypal_cancel():
-    return "Zahlung abgebrochen. Du kannst jederzeit neu starten."
+    return "❌ Zahlung abgebrochen. Du kannst jederzeit neu starten."
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET"])
 def home():
-    logger.info(f"Zugriff auf / mit Methode: {request.method}")
-    return "📡 Webhook läuft!", 200
+    return "📡 Webhook aktiv!", 200
 
-# --- Start Server ---
+# --- Webhook setzen ---
 if __name__ == "__main__":
     logger.info("🚀 Starte Bot...")
     bot.remove_webhook()
